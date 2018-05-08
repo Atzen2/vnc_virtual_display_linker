@@ -34,11 +34,12 @@
 # =======================
 #      CONFIGURATION
 # =======================
-PC_MONITOR_WIDTH = 1920
-PC_MONITOR_LENGTH = 1080
+PC_MONITOR_WIDTH = 1600
+PC_MONITOR_LENGTH = 800
 VIRTUAL_MONITOR_WIDTH = 1280
-VIRTUAL_MONITOR_LENGTH = 800
+VIRTUAL_MONITOR_LENGTH = 720
 
+VIRTUAL_MONITOR_PORT = "VGA-1"
 
 # =======================
 
@@ -66,6 +67,9 @@ class ScreenManager:
         self.new_monitor()
 
     def new_monitor(self):
+        if self.conf[self.get_orientation].is_monitor_created == True :
+            self.delete_monitor()
+
         orientation = self.get_orientation()
         conf = self.conf
 
@@ -77,8 +81,8 @@ class ScreenManager:
         conf[orientation].xrandr_mode.alias = self.get_xrandr_mode_alias(conf[orientation].xrandr_mode.data)
 
         os.system("xrandr --newmode " + conf[orientation].xrandr_mode.data + " -hsync +vsync")
-        os.system("xrandr --addmode VIRTUAL1 " + conf[orientation].xrandr_mode.alias)
-        os.system("xrandr --output VIRTUAL1 --mode " + conf[orientation].xrandr_mode.alias)
+        os.system("xrandr --addmode " + VIRTUAL_MONITOR_PORT + " " + conf[orientation].xrandr_mode.alias)
+        os.system("xrandr --output " + VIRTUAL_MONITOR_PORT + " --mode " + conf[orientation].xrandr_mode.alias + " --right-of LVDS-1")
         os.system('xrandr')
 
         self.conf[self.get_orientation].is_monitor_created = True
@@ -87,13 +91,15 @@ class ScreenManager:
         orientation = self.get_orientation()
         conf = self.conf
 
-        os.system("xrandr --output VIRTUAL1 --off")
-        os.system("xrandr --delmode VIRTUAL1 " + conf[orientation].xrandr_mode.alias)
+        os.system("xrandr --output " + VIRTUAL_MONITOR_PORT + " --off")
+        os.system("xrandr --delmode " + VIRTUAL_MONITOR_PORT + " " + conf[orientation].xrandr_mode.alias)
         os.system('xrandr')
         self.conf[self.get_orientation].is_monitor_created = False
 
     def start_vnc(self):
-        os.system("x11vnc -nocursorshape -nocursorpos -noxinerama -solid -repeat -forever -clip " + self.conf[self.get_orientation()].x11vnc_clip)
+        print "Enter password"
+        password = raw_input(" >>  ")
+        os.system("x11vnc -passwd " + password + " -nocursorshape -nocursorpos -noxinerama -solid -repeat -forever -clip " + self.conf[self.get_orientation()].x11vnc_clip)
 
     def toggle_orientation(self):
         self.delete_monitor()
@@ -165,6 +171,8 @@ def main_menu():
         while True:
             choice = raw_input(" >>  ").lower()
             if choice == 'q':
+                if screen_manager.conf[screen_manager.get_orientation].is_monitor_created == True:
+                    screen_manager.delete_monitor()
                 sys.exit()
             else:
                 try:
